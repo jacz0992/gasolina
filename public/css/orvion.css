@@ -1,0 +1,221 @@
+/* ORVION DESIGN SYSTEM - Fleet Manager */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+    /* Paleta Orvion */
+    --bg-color: #F2F2F2;           /* Gris claro de fondo */
+    --card-bg: #FFFFFF;            /* Blanco puro */
+    --primary-lime: #C7F33C;       /* El verde lima eléctrico */
+    --primary-black: #111111;      /* Casi negro */
+    --text-main: #111111;
+    --text-muted: #888888;
+    
+    /* Variables de Estilo */
+    --radius-card: 24px;           /* Bordes muy redondos */
+    --radius-btn: 12px;            /* Botones intermedios */
+    --radius-pill: 50px;           /* Botones píldora */
+    --shadow-soft: 0 10px 40px -10px rgba(0,0,0,0.08); /* Sombra difusa estilo Apple */
+    --font-main: 'Inter', sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    font-family: var(--font-main);
+    color: var(--text-main);
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.02em; /* Kerning ajustado estilo moderno */
+}
+
+/* --- NUEVOS ESTILOS PARA EL HEADER DEL VEHÍCULO --- */
+
+/* Badge de Marca (Estilo Píldora Gris) */
+.badge-orvion {
+    background-color: #F0F0F0;
+    color: var(--primary-black);
+    padding: 6px 14px;
+    border-radius: 99px;
+    font-weight: 500;
+    font-size: 0.8rem;
+    letter-spacing: -0.01em;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Imagen del Vehículo (Estilo Squircle) */
+.vehicle-avatar-container {
+    position: relative;
+    width: 120px;
+    height: 120px;
+}
+.vehicle-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 28px; /* Radio grande pero no circular */
+    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+.btn-edit-icon {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    background: white;
+    border: 1px solid #eee;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-black);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transition: transform 0.2s;
+    text-decoration: none;
+}
+.btn-edit-icon:hover {
+    transform: scale(1.1);
+    background: var(--primary-black);
+    color: white;
+}
+
+/* Títulos Grandes */
+.display-title {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    color: var(--primary-black);
+    line-height: 1.1;
+}
+
+/* Separador Vertical */
+.vr-soft {
+    width: 1px;
+    background-color: #eee;
+    height: 40px;
+    margin: 0 1.5rem;
+}
+
+
+/* NAVBAR FLOTANTE */
+.navbar {
+    background: rgba(255, 255, 255, 0.8) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding: 1rem 1.5rem;
+    margin-bottom: 2rem;
+}
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: var(--primary-black) !important;
+}
+
+/* TARJETAS (CARDS) */
+.card {
+    background: var(--card-bg);
+    border: none;
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-soft);
+    padding: 1.5rem;
+    transition: transform 0.2s ease;
+}
+.card-header {
+    background: transparent;
+    border-bottom: none;
+    padding-bottom: 0;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+/* KITS DE ESTADÍSTICAS (KPIs) - ESTILO NEGRO Y LIMA */
+.card-stat {
+    position: relative;
+    overflow: hidden;
+}
+/* Variante Negra (Como la tarjeta de $3.7k) */
+.card-stat.black-theme {
+    background: var(--primary-black);
+    color: white;
+}
+.card-stat.black-theme h6 { color: #888; }
+.card-stat.black-theme h2 { color: white; }
+
+/* Variante Lima (Como el gráfico pequeño) */
+.card-stat.lime-theme {
+    background: var(--primary-lime);
+    color: var(--primary-black);
+}
+
+/* BOTONES */
+.btn-primary {
+    background-color: var(--primary-black);
+    border: none;
+    border-radius: var(--radius-pill);
+    padding: 10px 24px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+.btn-primary:hover {
+    background-color: #333;
+    transform: translateY(-2px);
+}
+
+/* Botón Secundario (Estilo gris claro) */
+.btn-outline-secondary {
+    background: #f0f0f0;
+    border: none;
+    color: var(--primary-black);
+    border-radius: var(--radius-pill);
+    font-weight: 500;
+}
+.btn-outline-secondary:hover {
+    background: #e0e0e0;
+}
+
+/* TIPOGRAFÍA */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    letter-spacing: -0.03em;
+}
+.text-muted {
+    color: var(--text-muted) !important;
+    font-weight: 400;
+}
+
+/* TABS (PESTAÑAS) - Estilo Cápsula */
+.nav-tabs {
+    border: none;
+    background: #f0f0f0;
+    padding: 4px;
+    border-radius: 99px;
+    display: inline-flex;
+}
+.nav-tabs .nav-link {
+    border: none;
+    border-radius: 99px;
+    color: #666;
+    padding: 6px 16px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+.nav-tabs .nav-link.active {
+    background: white;
+    color: black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* FORMULARIOS */
+.form-control, .form-select {
+    background: #f9f9f9;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 0.95rem;
+}
+.form-control:focus {
+    background: white;
+    border-color: var(--primary-black);
+    box-shadow: none;
+}

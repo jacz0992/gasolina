@@ -1,0 +1,14 @@
+# Ignorar configuración del servidor (CONTIENE CLAVES)
+.vscode/sftp.json
+sftp.json
+
+# Ignorar carpeta de librerías (si usas composer)
+vendor/
+
+# Ignorar archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Ignorar las fotos de los autos (son pesadas y no es código)
+uploads/*
+!uploads/.gitignore
