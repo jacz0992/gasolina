@@ -27,7 +27,7 @@
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm px-3">
+<nav class="navbar navbar-expand-lg navbar-light sticky-top shadow-sm px-3">
     <a class="navbar-brand fw-bold" href="#"><i class="bi bi-speedometer2"></i> Fleet Manager</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
     <div class="collapse navbar-collapse" id="navbarNav">
@@ -44,7 +44,43 @@
                     <li><a class="dropdown-item text-primary" href="#" onclick="openVehicleModal()"><i class="bi bi-plus-circle"></i> Nuevo Vehículo</a></li>
                 </ul>
             </li>
-            <li class="nav-item"><a href="?c=Auth&a=logout" class="btn btn-outline-secondary btn-sm text-light border-0"><i class="bi bi-power"></i></a></li>
+            
+            <!-- Menú de Usuario -->
+<li class="nav-item dropdown ms-2">
+    <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 p-0" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <!-- Avatar pequeño -->
+        <div class="bg-white rounded-circle d-flex align-items-center justify-content-center text-secondary border shadow-sm" style="width: 38px; height: 38px;">
+            <i class="bi bi-person-fill fs-5"></i>
+        </div>
+        <!-- Nombre del usuario (visible en PC) -->
+        <span class="d-none d-md-block small fw-bold text-dark">
+            <?= htmlspecialchars($username ?? 'Mi Cuenta') ?>
+        </span>
+    </a>
+    
+    <!-- Desplegable -->
+    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 mt-2 p-2" style="min-width: 200px;">
+        <li>
+            <div class="px-3 py-2">
+                <p class="mb-0 small fw-bold text-dark">Hola, <?= htmlspecialchars($username ?? 'Usuario') ?></p>
+                <p class="mb-0 x-small text-muted" style="font-size: 0.75rem;">Gestiona tu cuenta</p>
+            </div>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+            <a class="dropdown-item rounded-3 py-2" href="?c=Auth&a=profile">
+                <i class="bi bi-person-badge me-2 text-primary"></i> Mi Perfil
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item rounded-3 py-2 text-danger" href="?c=Auth&a=logout">
+                <i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión
+            </a>
+        </li>
+    </ul>
+</li>
+                
+
         </ul>
     </div>
 </nav>

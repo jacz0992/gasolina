@@ -219,3 +219,20 @@ h1, h2, h3, h4, h5, h6 {
     border-color: var(--primary-black);
     box-shadow: none;
 }
+
+/* Links visibles sobre navbar clara */
+.navbar .nav-link,
+.navbar .navbar-toggler,
+.navbar .navbar-toggler-icon {
+  color: var(--primary-black) !important;
+}
+
+/* Dropdown legible */
+.navbar .dropdown-menu {
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 16px;
+  box-shadow: var(--shadow-soft);
+}
+.navbar .dropdown-item {
+  padding: 10px 14px;
+}
