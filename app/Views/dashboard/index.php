@@ -2,484 +2,703 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Fleet Manager</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Fleet Manager</title>
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <link href="public/css/orvion.css" rel="stylesheet"> 
-     <!-- <style>
-        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .map-select { height: 300px; width: 100%; border-radius: 8px; margin-bottom: 10px; cursor: crosshair; }
-        .vehicle-card { background: white; border: none; border-radius: 12px; transition: 0.3s; }
-        .vehicle-img { width: 90px; height: 90px; object-fit: cover; border-radius: 50%; padding: 3px; border: 2px solid #e9ecef; }
-        .card-stat { border: none; border-radius: 12px; transition: transform 0.2s; overflow: hidden; }
-        .card-stat:hover { transform: translateY(-3px); }
-        .stat-icon { position: absolute; right: -10px; bottom: -10px; font-size: 5rem; opacity: 0.1; transform: rotate(-15deg); }
-        .chart-container { position: relative; height: 300px; width: 100%; }
-        .nav-tabs .nav-link { border: none; color: #6c757d; font-weight: 500; }
-        .nav-tabs .nav-link.active { color: #0d6efd; border-bottom: 2px solid #0d6efd; background: transparent; }
-        .main-card { border: none; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
-        #search-results { position: absolute; z-index: 1000; background: white; width: 100%; border: 1px solid #ccc; max-height: 150px; overflow-y: auto; display: none; }
-        .search-item { padding: 8px; cursor: pointer; border-bottom: 1px solid #eee; }
-        .search-item:hover { background-color: #f8f9fa; }
-    </style> -->
-</head>
-<body>
-
-<nav class="navbar navbar-expand-lg navbar-light sticky-top shadow-sm px-3">
-    <a class="navbar-brand fw-bold" href="#"><i class="bi bi-speedometer2"></i> Fleet Manager</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto align-items-center">
-            <li class="nav-item dropdown me-3">
-                <a class="nav-link dropdown-toggle active" href="#" role="button" data-bs-toggle="dropdown">
-                    <i class="bi bi-car-front-fill"></i> <?= $vehiculo_actual ? htmlspecialchars($vehiculo_actual['nombre']) : 'Seleccionar' ?>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-end shadow">
-                    <?php if(!empty($mis_vehiculos)): foreach($mis_vehiculos as $v): ?>
-                    <li><a class="dropdown-item" href="?c=Dashboard&v=<?= $v['id'] ?>"><?= htmlspecialchars($v['nombre']) ?></a></li>
-                    <?php endforeach; endif; ?>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-primary" href="#" onclick="openVehicleModal()"><i class="bi bi-plus-circle"></i> Nuevo Vehículo</a></li>
-                </ul>
-            </li>
-            
-            <!-- Menú de Usuario -->
-<li class="nav-item dropdown ms-2">
-    <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 p-0" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-        <!-- Avatar pequeño -->
-        <div class="bg-white rounded-circle d-flex align-items-center justify-content-center text-secondary border shadow-sm" style="width: 38px; height: 38px;">
-            <i class="bi bi-person-fill fs-5"></i>
-        </div>
-        <!-- Nombre del usuario (visible en PC) -->
-        <span class="d-none d-md-block small fw-bold text-dark">
-            <?= htmlspecialchars($username ?? 'Mi Cuenta') ?>
-        </span>
-    </a>
+    <!-- Google Fonts (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS (Orvion Style) -->
+    <link href="public/css/orvion.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Leaflet CSS (Mapa) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     
-    <!-- Desplegable -->
-    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 mt-2 p-2" style="min-width: 200px;">
-        <li>
-            <div class="px-3 py-2">
-                <p class="mb-0 small fw-bold text-dark">Hola, <?= htmlspecialchars($username ?? 'Usuario') ?></p>
-                <p class="mb-0 x-small text-muted" style="font-size: 0.75rem;">Gestiona tu cuenta</p>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #F5F7FA; }
+        .card-kpi { border: none; border-radius: 12px; transition: transform 0.2s; }
+        .card-kpi:hover { transform: translateY(-3px); }
+        .nav-pills .nav-link.active { background-color: #111; color: #fff; }
+        .nav-pills .nav-link { color: #666; font-weight: 500; }
+        .table-hover tbody tr:hover { background-color: #f8f9fa; }
+        /* Mapa Principal */
+        #map { height: 350px; width: 100%; border-radius: 12px; z-index: 1; }
+    </style>
+</head>
+<body class="bg-light">
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top border-bottom py-3 px-4 shadow-sm">
+        <div class="container-fluid">
+            <!-- Logo / Brand -->
+            <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-dark" href="#">
+                <div class="bg-dark text-white rounded-3 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                    <i class="bi bi-speedometer2"></i>
+                </div>
+                Fleet Manager
+            </a>
+
+            <!-- Toggle Mobile -->
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Navbar Content -->
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav ms-auto align-items-center gap-3">
+                    <!-- Selector de Vehículo (Si tiene varios) -->
+                    <?php if (count($mis_vehiculos) > 1): ?>
+                    <li class="nav-item">
+                        <div class="dropdown">
+                            <button class="btn btn-light btn-sm dropdown-toggle border rounded-pill px-3" type="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-car-front-fill me-1"></i> 
+                                <?= htmlspecialchars($vehiculo_actual['modelo']) ?>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2">
+                                <?php foreach ($mis_vehiculos as $v): ?>
+                                <li>
+                                    <a class="dropdown-item py-2 small <?= ($v['id'] == $vehiculo_actual['id']) ? 'active bg-light text-dark fw-bold' : '' ?>" 
+                                       href="?c=Dashboard&v=<?= $v['id'] ?>">
+                                        <?= htmlspecialchars($v['modelo']) ?> 
+                                        <span class="text-muted ms-1">(<?= htmlspecialchars($v['placa'] ?? '') ?>)</span>
+                                    </a>
+                                </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    </li>
+                    <?php endif; ?>
+
+                    <!-- Botón Agregar Vehículo -->
+                    <li class="nav-item">
+                        <button class="btn btn-dark btn-sm rounded-pill px-3 d-flex align-items-center gap-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalVehiculo">
+                            <i class="bi bi-plus-lg"></i> <span>Nuevo Vehículo</span>
+                        </button>
+                    </li>
+                    
+                    <div class="vr h-50 my-auto text-secondary d-none d-lg-block"></div>
+
+                    <!-- Menú de Usuario -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 p-0" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div class="bg-white rounded-circle d-flex align-items-center justify-content-center text-secondary border shadow-sm" style="width: 38px; height: 38px;">
+                                <i class="bi bi-person-fill fs-5"></i>
+                            </div>
+                            <span class="d-none d-md-block small fw-bold text-dark">
+                                <?= htmlspecialchars($user_name ?? 'Mi Cuenta') ?>
+                            </span>
+                        </a>
+                        
+                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 mt-2 p-2" style="min-width: 200px;">
+                            <li>
+                                <div class="px-3 py-2">
+                                    <p class="mb-0 small fw-bold text-dark">Hola, <?= htmlspecialchars($user_name ?? 'Usuario') ?></p>
+                                    <p class="mb-0 x-small text-muted" style="font-size: 0.75rem;">Gestiona tu cuenta</p>
+                                </div>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item rounded-3 py-2" href="?c=Auth&a=profile">
+                                    <i class="bi bi-person-badge me-2 text-primary"></i> Mi Perfil
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item rounded-3 py-2 text-danger" href="?c=Auth&a=logout">
+                                    <i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
             </div>
-        </li>
-        <li><hr class="dropdown-divider"></li>
-        <li>
-            <a class="dropdown-item rounded-3 py-2" href="?c=Auth&a=profile">
-                <i class="bi bi-person-badge me-2 text-primary"></i> Mi Perfil
-            </a>
-        </li>
-        <li>
-            <a class="dropdown-item rounded-3 py-2 text-danger" href="?c=Auth&a=logout">
-                <i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión
-            </a>
-        </li>
-    </ul>
-</li>
-                
-
-        </ul>
-    </div>
-</nav>
-
-<div class="container-fluid py-4 px-lg-4">
-    <?php if(!$vehiculo_actual): ?>
-        <div class="text-center py-5">
-            <h2 class="text-muted">🚗 ¡Empieza agregando tu primer vehículo!</h2>
-            <button class="btn btn-primary btn-lg mt-3 rounded-pill px-4" onclick="openVehicleModal()">Agregar Vehículo</button>
         </div>
-    <?php else: ?>
+    </nav>
 
-        <!-- FICHA DEL VEHÍCULO (ESTILO ORVION) -->
-    <div class="card mb-4 p-4 border-0 shadow-sm" style="border-radius: 32px;">
-        <div class="d-flex align-items-center flex-wrap gap-4">
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="container-fluid px-4 py-4">
+        
+                        <!-- ENCABEZADO: Info del Vehículo -->
+        <?php if ($vehiculo_actual): ?>
+        <div class="row align-items-center mb-4 g-3">
+            <!-- Columna Info (Adaptable) -->
+            <div class="col-12 col-md-8">
+                <div class="d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 text-center text-md-start">
+                    
+                    <!-- Foto Vehículo -->
+                    <div class="bg-white p-1 rounded-4 shadow-sm border position-relative" style="width: 80px; height: 80px; flex-shrink: 0;">
+                        <?php if (!empty($vehiculo_actual['foto'])): ?>
+                            <img src="uploads/<?= htmlspecialchars($vehiculo_actual['foto']) ?>" class="w-100 h-100 object-fit-cover rounded-3" alt="Vehículo">
+                        <?php else: ?>
+                            <div class="w-100 h-100 bg-light rounded-3 d-flex align-items-center justify-content-center text-secondary">
+                                <i class="bi bi-car-front fs-1"></i>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <!-- Info + Acciones -->
+                    <div class="flex-grow-1 w-100">
+                        <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-start gap-2 mb-2">
+                            <h4 class="fw-bold mb-0 text-dark text-break" style="line-height: 1.2;">
+                                <?= htmlspecialchars($vehiculo_actual['modelo']) ?>
+                            </h4>
+                            
+                            <!-- ACCIONES (Botones juntos) -->
+                            <div class="d-flex align-items-center gap-1 bg-white border rounded-pill px-2 py-1 shadow-sm ms-1">
+                                <button class="btn btn-link btn-sm text-secondary p-1 border-0" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#modalEditarVehiculo" 
+                                        title="Editar">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                                <div class="vr py-2 text-secondary opacity-25"></div>
+                                <form action="?c=Dashboard&a=deleteVehicle" method="POST" class="d-inline" 
+                                      onsubmit="return confirm('¿Eliminar <?= htmlspecialchars($vehiculo_actual['modelo']) ?>?');">
+                                    <input type="hidden" name="id" value="<?= $vehiculo_actual['id'] ?>">
+                                    <button type="submit" class="btn btn-link btn-sm text-danger p-1 border-0" title="Eliminar">
+                                        <i class="bi bi-trash3-fill"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-2">
+                            <span class="badge bg-dark text-white fw-normal px-2 py-1 rounded-2 font-monospace">
+                                <?= htmlspecialchars($vehiculo_actual['placa'] ?? 'SIN PLACA') ?>
+                            </span>
+                            <span class="text-muted small border-start ps-2 text-truncate" style="max-width: 200px;">
+                                <?= htmlspecialchars($vehiculo_actual['descripcion']) ?>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
-            <!-- 1. FOTO CON BOTÓN DE EDICIÓN FLOTANTE -->
-            <div class="vehicle-avatar-container flex-shrink-0">
-                <?php if($vehiculo_actual['foto']): ?>
-                    <img src="uploads/<?= $vehiculo_actual['foto'] ?>" class="vehicle-avatar" alt="Vehículo">
-                <?php else: ?>
-                    <div class="vehicle-avatar bg-light d-flex align-items-center justify-content-center text-secondary fs-1">
-                        <i class="bi bi-car-front"></i>
+            <!-- Botón Registrar Tanqueada -->
+            <div class="col-12 col-md-4 text-center text-md-end">
+                <button class="btn btn-primary rounded-pill px-4 py-2 shadow-sm fw-bold w-100 w-md-auto d-inline-flex align-items-center justify-content-center gap-2" data-bs-toggle="modal" data-bs-target="#modalLog">
+                    <i class="bi bi-fuel-pump-fill"></i>
+                    <span>Registrar Tanqueada</span>
+                </button>
+            </div>
+        </div>
+
+
+        <!-- KPIs (Tarjetas de Resumen) -->
+        <div class="row g-3 mb-4">
+            <!-- 1. Rendimiento Promedio -->
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card card-kpi bg-white shadow-sm h-100 p-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-success bg-opacity-10 text-success p-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                            <i class="bi bi-speedometer"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted small mb-0 fw-bold text-uppercase">Rendimiento</h6>
+                            <h3 class="fw-bold mb-0 text-dark">
+                                <?= number_format($stats['promedio_rend'], 1) ?> 
+                                <span class="fs-6 text-secondary fw-normal"><?= $vehiculo_actual['unidad_consumo'] ?></span>
+                            </h3>
+                        </div>
                     </div>
-                <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- 2. Rango Estimado -->
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card card-kpi bg-white shadow-sm h-100 p-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-info bg-opacity-10 text-info p-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                            <i class="bi bi-signpost-split"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted small mb-0 fw-bold text-uppercase">Rango Estimado</h6>
+                            <h3 class="fw-bold mb-0 text-dark">
+                                <?= number_format($stats['rango_estimado'], 0, ',', '.') ?>
+                                <span class="fs-6 text-secondary fw-normal">km</span>
+                            </h3>
+                            <small class="text-muted x-small">con tanque lleno</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Gasto Mes Actual -->
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card card-kpi bg-white shadow-sm h-100 p-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-warning bg-opacity-10 text-warning p-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                            <i class="bi bi-wallet2"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted small mb-0 fw-bold text-uppercase">Gasto (<?= $stats['mes_nombre'] ?>)</h6>
+                            <h3 class="fw-bold mb-0 text-dark">
+                                $ <?= number_format($stats['gasto_mes'], 0, ',', '.') ?>
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Última Estación -->
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card card-kpi bg-white shadow-sm h-100 p-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-danger bg-opacity-10 text-danger p-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                            <i class="bi bi-geo-alt"></i>
+                        </div>
+                        <div class="overflow-hidden">
+                            <h6 class="text-muted small mb-0 fw-bold text-uppercase">Última Estación</h6>
+                            <h5 class="fw-bold mb-0 text-dark text-truncate" title="<?= !empty($logs) ? $logs[0]['nombre_estacion'] : '-' ?>">
+                                <?= !empty($logs) ? $logs[0]['nombre_estacion'] : '-' ?>
+                            </h5>
+                            <small class="text-muted x-small">
+                                <?= !empty($logs) ? date('d M Y', strtotime($logs[0]['fecha'])) : '' ?>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN GRÁFICOS Y MAPA -->
+        <div class="row g-4 mb-4">
+            <!-- Gráfica de Rendimiento (Línea) -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-white border-0 py-3 px-4">
+                        <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-graph-up me-2"></i>Rendimiento</h6>
+                    </div>
+                    <div class="card-body px-4 pb-4">
+                        <canvas id="rendimientoChart" style="max-height: 250px;"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Gráfica de Gastos (Barras) -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-white border-0 py-3 px-4">
+                        <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-bar-chart-fill me-2"></i>Gasto Mensual</h6>
+                    </div>
+                    <div class="card-body px-4 pb-4">
+                        <canvas id="gastosChart" style="max-height: 250px;"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mapa de Estaciones -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-white border-0 py-3 px-4">
+                        <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-map me-2"></i>Ruta</h6>
+                    </div>
+                    <div class="card-body p-0 position-relative">
+                        <div id="map" class="h-100" style="min-height: 250px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLA DE REGISTROS -->
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-5">
+            <div class="card-header bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-list-ul me-2"></i>Registros Recientes</h6>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="bg-light border-bottom">
+                        <tr>
+                            <th class="ps-4 text-muted fw-bold small text-uppercase" style="font-size: 0.75rem;">Fecha</th>
+                            <th class="text-muted fw-bold small text-uppercase" style="font-size: 0.75rem;">Estación</th>
+                            <th class="text-end text-muted fw-bold small text-uppercase" style="font-size: 0.75rem;">Odómetro</th>
+                            <th class="text-end text-muted fw-bold small text-uppercase" style="font-size: 0.75rem;">Carga</th>
+                            <th class="text-end text-muted fw-bold small text-uppercase" style="font-size: 0.75rem;">$/Gal</th>
+                            <th class="text-end text-muted fw-bold small text-uppercase" style="font-size: 0.75rem;">Total</th>
+                            <th class="text-end pe-4 text-muted fw-bold small text-uppercase" style="font-size: 0.75rem;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($logs as $row): ?>
+                        <tr class="align-middle border-bottom border-light">
+                            <!-- Fecha -->
+                            <td class="ps-4 py-3">
+                                <div class="fw-bold text-dark" style="font-size: 0.9rem;">
+                                    <?= date('d M', strtotime($row['fecha'])) ?>
+                                    <span class="text-muted small ms-1">'<?= date('y', strtotime($row['fecha'])) ?></span>
+                                </div>
+                            </td>
+
+                            <!-- Estación -->
+                            <td class="py-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-2 text-danger" 
+                                         style="width: 24px; height: 24px;">
+                                        <i class="bi bi-geo-alt-fill" style="font-size: 10px;"></i>
+                                    </div>
+                                    <span class="text-dark" style="font-size: 0.9rem;">
+                                        <?= htmlspecialchars($row['nombre_estacion']) ?>
+                                    </span>
+                                </div>
+                            </td>
+
+                            <!-- Odómetro -->
+                            <td class="text-end py-3 font-monospace text-dark" style="font-size: 0.95rem;">
+                                <?= number_format($row['odometro'], 1, ',', '.') ?>
+                            </td>
+
+                            <!-- Carga (Galones) -->
+                            <td class="text-end py-3 font-monospace text-dark" style="font-size: 0.95rem;">
+                                <?= number_format($row['galones'], 2, ',', '.') ?>
+                            </td>
+                            
+                            <!-- Precio por Galón -->
+                            <td class="text-end py-3 font-monospace text-muted fw-bold" style="font-size: 0.85rem;">
+                                <?php 
+                                    $precioGalon = ($row['galones'] > 0) ? ($row['precio_total'] / $row['galones']) : 0;
+                                    echo '$ ' . number_format($precioGalon, 0, ',', '.');
+                                ?>
+                            </td>
+
+                            <!-- Total -->
+                            <td class="text-end py-3 fw-bold text-dark" style="font-size: 0.95rem;">
+                                $ <?= number_format($row['precio_total'], 0, ',', '.') ?>
+                            </td>
+
+                            <!-- Acciones -->
+                            <td class="text-end pe-4 py-3">
+                                <form action="?c=Dashboard&a=deleteLog" method="POST" class="d-inline" onsubmit="return confirm('¿Borrar este registro?');">
+                                    <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                                    <input type="hidden" name="vehicle_id" value="<?= $vehiculo_actual['id'] ?>">
+                                    <button type="submit" class="btn btn-link btn-sm text-danger p-0 border-0 bg-transparent" title="Eliminar">
+                                        <i class="bi bi-trash3" style="font-size: 1rem;"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+
+                        <?php if (empty($logs)): ?>
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted small">
+                                <i class="bi bi-journal-x mb-2 d-block fs-4"></i>
+                                No hay registros en esta página
+                            </td>
+                        </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            <?php if (isset($pagination) && $pagination['total'] > 1): ?>
+            <div class="d-flex justify-content-between align-items-center mt-3 px-4 pb-4 border-top pt-3">
+                <div class="small text-muted fw-bold" style="font-size: 0.8rem;">
+                    Página <?= $pagination['current'] ?> de <?= $pagination['total'] ?>
+                </div>
                 
-                <!-- Botón flotante para editar (Solo ícono, más limpio) -->
-                <a href="#" onclick='openVehicleModal(<?= json_encode($vehiculo_actual) ?>)' class="btn-edit-icon" title="Editar detalles">
-                    <i class="bi bi-pencil-fill" style="font-size: 0.8rem;"></i>
-                </a>
-            </div>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0">
+                        <!-- Botón Anterior -->
+                        <li class="page-item <?= ($pagination['current'] <= 1) ? 'disabled' : '' ?>">
+                            <a class="page-link border rounded-start-pill px-3 py-1 fw-bold text-secondary" 
+                               href="?c=Dashboard&v=<?= $pagination['v_id'] ?>&page=<?= $pagination['current'] - 1 ?>"
+                               style="font-size: 0.8rem;">
+                               <i class="bi bi-chevron-left me-1"></i> Anterior
+                            </a>
+                        </li>
 
-            <!-- 2. INFORMACIÓN PRINCIPAL -->
-            <div class="flex-grow-1">
-                <div class="d-flex align-items-center gap-2 mb-2">
-                    <!-- Badge de Marca -->
-                    <span class="badge-orvion">
-                        <?= htmlspecialchars($vehiculo_actual['marca']) ?>
-                    </span>
-                    <!-- Badge de Combustible -->
-                    <span class="badge-orvion bg-white border">
-                        <i class="bi bi-fuel-pump-fill text-muted"></i> 
-                        <?= htmlspecialchars($vehiculo_actual['tipo_combustible']) ?>
-                    </span>
-                </div>
-                
-                <h1 class="display-title mb-1"><?= htmlspecialchars($vehiculo_actual['nombre']) ?></h1>
-                <p class="text-muted mb-0" style="font-size: 0.95rem;">
-                    <?= htmlspecialchars($vehiculo_actual['modelo']) ?> • 
-                    <span class="fst-italic text-black-50">"<?= htmlspecialchars($vehiculo_actual['descripcion']) ?>"</span>
-                </p>
-            </div>
-
-            <!-- 3. DATOS TÉCNICOS (A la derecha, limpios) -->
-            <div class="d-none d-md-flex align-items-center">
-                <div class="text-end">
-                    <div class="text-uppercase small fw-bold text-muted" style="font-size: 0.7rem; letter-spacing: 1px;">Tanque</div>
-                    <div class="fs-4 fw-bold var-text-main">
-                        <?= number_format($vehiculo_actual['capacidad_tanque'], 1, ',', '.') ?> 
-                        <span class="fs-6 text-muted fw-normal"><?= $vehiculo_actual['unidad_combustible'] ?></span>
-                    </div>
-                </div>
-                
-                <div class="vr-soft"></div>
-                
-                <div class="text-end">
-                    <div class="text-uppercase small fw-bold text-muted" style="font-size: 0.7rem; letter-spacing: 1px;">Medición</div>
-                    <div class="fs-4 fw-bold var-text-main">
-                        <?= explode('/', $vehiculo_actual['unidad_consumo'])[0] ?>
-                        <span class="fs-6 text-muted fw-normal">/<?= explode('/', $vehiculo_actual['unidad_consumo'])[1] ?? '' ?></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-    <!-- KPI CARDS RE-ESTILIZADAS -->
-    <div class="row g-4 mb-4">
-        <!-- Tarjeta Negra (Estilo "Total Revenue") -->
-        <div class="col-md-4">
-            <div class="card card-stat black-theme h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="text-uppercase small ls-1 mb-0" style="opacity:0.6">Rendimiento</h6>
-                        <div class="bg-white rounded-circle p-1 d-flex justify-content-center align-items-center" style="width:32px;height:32px;opacity:0.2"><i class="bi bi-lightning-fill text-dark"></i></div>
-                    </div>
-                    <h2 class="display-5 fw-bold mb-0"><?= number_format($stats['promedio_rend'], 1) ?></h2>
-                    <p class="small text-white-50 mt-1"><?= $vehiculo_actual['unidad_consumo'] ?> promedio</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tarjeta Blanca Clásica -->
-        <div class="col-md-4">
-            <div class="card card-stat h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="text-uppercase small text-muted mb-0">Autonomía</h6>
-                        <div class="bg-light rounded-circle p-1 d-flex justify-content-center align-items-center" style="width:32px;height:32px"><i class="bi bi-geo-alt text-dark"></i></div>
-                    </div>
-                    <h2 class="display-5 fw-bold mb-0 text-dark">~<?= number_format($stats['rango_estimado'], 0) ?></h2>
-                    <p class="small text-muted mt-1">km con tanque lleno</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tarjeta Verde Lima (Estilo "Sales Funnel") -->
-        <div class="col-md-4">
-            <div class="card card-stat lime-theme h-100" style="background-color: #C7F33C;">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="text-uppercase small mb-0" style="color:#445200">Gasto Mes</h6>
-                        <div class="bg-dark rounded-circle p-1 d-flex justify-content-center align-items-center" style="width:32px;height:32px;opacity:0.1"><i class="bi bi-wallet2 text-white"></i></div>
-                    </div>
-                    <h2 class="display-5 fw-bold mb-0 text-dark">$<?= number_format($stats['gasto_mes'], 0, ',', '.') ?></h2>
-                    <p class="small mt-1" style="color:#445200"><?= $stats['mes_nombre'] ?></p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-    <!-- MAPA Y GRAFICOS -->
-    <div class="row g-4">
-        <div class="col-lg-5">
-            <div class="card main-card h-100">
-                <div class="card-header bg-white border-0 pt-3 pb-0"><h6 class="fw-bold"><i class="bi bi-map text-danger"></i> Rutas Frecuentes</h6></div>
-                <div class="card-body p-2"><div id="mainMap" style="height: 400px; border-radius: 8px;"></div></div>
-            </div>
-        </div>
-        <div class="col-lg-7">
-            <div class="card main-card h-100">
-                <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
-                    <h6 class="fw-bold"><i class="bi bi-activity text-primary"></i> Métricas</h6>
-                    <ul class="nav nav-tabs card-header-tabs" role="tablist">
-                        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-rend" type="button">Eficiencia</button></li>
-                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-gasto" type="button">Gastos</button></li>
+                        <!-- Botón Siguiente -->
+                        <li class="page-item <?= ($pagination['current'] >= $pagination['total']) ? 'disabled' : '' ?>">
+                            <a class="page-link border rounded-end-pill px-3 py-1 fw-bold text-secondary ms-1" 
+                               href="?c=Dashboard&v=<?= $pagination['v_id'] ?>&page=<?= $pagination['current'] + 1 ?>"
+                               style="font-size: 0.8rem;">
+                               Siguiente <i class="bi bi-chevron-right ms-1"></i>
+                            </a>
+                        </li>
                     </ul>
+                </nav>
+            </div>
+            <?php endif; ?>
+
+        </div>
+        
+        <?php else: ?>
+        <!-- Vista vacía si no hay vehículo -->
+        <div class="text-center py-5">
+            <h2 class="fw-bold text-secondary">Bienvenido a Fleet Manager</h2>
+            <p class="text-muted">Para comenzar, registra tu primer vehículo.</p>
+            <button class="btn btn-dark rounded-pill px-4 mt-3" data-bs-toggle="modal" data-bs-target="#modalVehiculo">
+                Registrar Vehículo
+            </button>
+        </div>
+        <?php endif; ?>
+
+    </div>
+
+    <!-- MODAL NUEVO VEHÍCULO -->
+    <div class="modal fade" id="modalVehiculo" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Nuevo Vehículo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="card-body">
-                    <div class="tab-content h-100">
-                        <div class="tab-pane fade show active" id="tab-rend" role="tabpanel">
-                            <div class="chart-container"><canvas id="chartCombined"></canvas></div>
-                            <div class="text-center mt-2 small text-muted">Evolución del rendimiento en <?= $vehiculo_actual['unidad_consumo'] ?></div>
+                <div class="modal-body p-4">
+                    <form action="?c=Dashboard&a=saveVehicle" method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">PLACA / MATRÍCULA</label>
+                            <input type="text" name="placa" class="form-control rounded-3" required placeholder="Ej: ABC-123" style="text-transform: uppercase;">
                         </div>
-                        <div class="tab-pane fade" id="tab-gasto" role="tabpanel">
-                            <div class="chart-container"><canvas id="chartMonthly"></canvas></div>
-                            <div class="text-center mt-2 small text-muted">Total gastado por mes</div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">MODELO / NOMBRE</label>
+                            <input type="text" name="modelo" class="form-control rounded-3" required placeholder="Ej: Mazda 3">
                         </div>
-                    </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-muted">CAP. TANQUE (Gal)</label>
+                                <input type="number" step="0.1" name="capacidad_tanque" class="form-control rounded-3" required value="12">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-muted">UNIDAD</label>
+                                <select name="unidad_consumo" class="form-select rounded-3">
+                                    <option value="km/gal">km/gal</option>
+                                    <option value="km/l">km/l</option>
+                                    <option value="mpg">mpg</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-muted">FOTO (Opcional)</label>
+                            <input type="file" name="foto" class="form-control rounded-3" accept="image/*">
+                        </div>
+                        <button type="submit" class="btn btn-dark w-100 rounded-pill py-2 fw-bold">Guardar Vehículo</button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- TABLA HISTORIAL -->
-    <div class="card main-card mt-4">
-        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
-            <h6 class="fw-bold m-0"><i class="bi bi-clock-history"></i> Historial de Cargas</h6>
-            <button class="btn btn-primary btn-sm rounded-pill px-3" onclick="openLogModal()"><i class="bi bi-plus-lg"></i> Nuevo Registro</button>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0 text-nowrap">
-                <thead class="bg-light small text-uppercase text-muted">
-                    <tr><th class="ps-4">Fecha</th><th>Estación</th><th class="text-end">Odómetro</th><th class="text-end">Carga</th><th class="text-end">Total</th><th class="text-center pe-4">Acciones</th></tr>
-                </thead>
-                <tbody class="border-top-0">
-                    <?php foreach ($logs as $row): ?>
-                    <tr>
-                        <td class="ps-4 fw-bold text-dark"><?= date('d M', strtotime($row['fecha'])) ?> <small class="text-muted fw-normal">'<?= date('y', strtotime($row['fecha'])) ?></small></td>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <span class="bg-light text-danger rounded-circle p-1 me-2"><i class="bi bi-geo-alt-fill" style="font-size: 0.7rem;"></i></span>
-                                <?= htmlspecialchars($row['nombre_estacion']) ?>
-                            </div>
-                        </td>
-                        <td class="text-end font-monospace"><?= number_format($row['odometro'], 1, ',', '.') ?></td>
-                        <td class="text-end"><?= number_format($row['galones'], 2, ',', '.') ?></td>
-                        <td class="text-end fw-bold text-dark">$ <?= number_format($row['precio_total'], 0, ',', '.') ?></td>
-                        <td class="text-center pe-4">
-                            <button class="btn btn-sm text-secondary btn-link p-0 me-2" onclick='openLogModal(<?= json_encode($row) ?>)' title="Editar"><i class="bi bi-pencil"></i></button>
-                            <!-- Formulario para borrar usando MVC (Action) -->
-                            <form action="?c=Dashboard&a=deleteLog" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar registro?');">
-                                <input type="hidden" name="id" value="<?= $row['id'] ?>">
-                                <input type="hidden" name="vehicle_id" value="<?= $vehiculo_actual['id'] ?>">
-                                <button class="btn btn-sm text-danger btn-link p-0" title="Eliminar"><i class="bi bi-trash"></i></button>
-                            </form>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
-    <?php endif; ?>
-</div>
-
-<!-- MODAL VEHÍCULO -->
-<div class="modal fade" id="vehicleModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header border-0 pb-0"><h5 class="modal-title fw-bold" id="vehicleModalTitle">Vehículo</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-            <form action="?c=Dashboard&a=saveVehicle" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="vehicle_id" id="v_id">
-                <div class="modal-body">
-                    <div class="mb-3"><label class="small text-muted text-uppercase fw-bold">Nombre</label><input type="text" name="nombre" id="v_nombre" class="form-control" placeholder="Ej: La Bestia" required></div>
-                    <div class="row g-2 mb-3">
-                        <div class="col-6"><label class="small text-muted text-uppercase fw-bold">Marca</label><input type="text" name="marca" id="v_marca" class="form-control" required></div>
-                        <div class="col-6"><label class="small text-muted text-uppercase fw-bold">Modelo</label><input type="text" name="modelo" id="v_modelo" class="form-control" required></div>
-                    </div>
-                    <div class="mb-3"><label class="small text-muted text-uppercase fw-bold">Descripción</label><textarea name="descripcion" id="v_desc" class="form-control" rows="2"></textarea></div>
-                    
-                    <h6 class="text-primary border-bottom pb-2 mb-3 mt-4">Configuración Técnica</h6>
-                    
-                    <div class="row g-2 mb-3">
-                        <div class="col-6"><label class="small text-muted">Combustible</label><select name="tipo_combustible" id="v_tipo" class="form-select"><option>Gasolina</option><option>Diesel</option><option>Eléctrico</option><option>GLP</option></select></div>
-                        <div class="col-6"><label class="small text-muted">Unidad Medida</label><select name="unidad_combustible" id="v_unidad" class="form-select"><option>Galones</option><option>Litros</option><option>kWh</option></select></div>
-                    </div>
-                    <div class="row g-2 mb-3">
-                        <div class="col-6"><label class="small text-muted">Medición Consumo</label><select name="unidad_consumo" id="v_consumo" class="form-select"><option>km/gal</option><option>km/L</option><option>L/100km</option></select></div>
-                        <div class="col-6"><label class="small text-muted">Capacidad Tanque</label><input type="number" step="0.1" name="capacidad_tanque" id="v_capacidad" class="form-control" required></div>
-                    </div>
-                    <div class="mb-2 p-2 bg-light rounded border border-dashed text-center">
-                        <label class="cursor-pointer w-100 py-2">
-                            <i class="bi bi-camera mb-1 d-block text-secondary h4"></i>
-                            <span class="small text-muted">Click para cambiar foto</span>
-                            <input type="file" name="foto" class="d-none" accept="image/*">
-                        </label>
-                    </div>
+    <!-- MODAL EDITAR VEHÍCULO (LIMPIO) -->
+    <div class="modal fade" id="modalEditarVehiculo" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Editar Vehículo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-footer border-0 pt-0"><button type="submit" class="btn btn-primary w-100 rounded-pill">Guardar Cambios</button></div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- MODAL REPOSTAJE -->
-<div class="modal fade" id="logModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header border-0 pb-0"><h5 class="modal-title fw-bold" id="logModalTitle">Registro</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-            <form action="?c=Dashboard&a=saveLog" method="POST">
-                <input type="hidden" name="id" id="log_id">
-                <input type="hidden" name="vehicle_id" value="<?= $vehiculo_actual['id'] ?? '' ?>">
-                <div class="modal-body">
-                    <div class="row g-4">
-                        <div class="col-md-5 border-end">
-                            <div class="mb-3"><label class="small fw-bold">Fecha</label><input type="date" name="fecha" id="log_fecha" class="form-control" required></div>
-                            <div class="mb-3"><label class="small fw-bold">Odómetro Actual</label><input type="number" step="any" name="odometro" id="log_odo" class="form-control" required></div>
-                            <div class="row g-2 mb-3">
-                                <div class="col-6"><label class="small fw-bold" id="lbl_unidad">Cantidad</label><input type="number" step="any" name="galones" id="log_gal" class="form-control" required></div>
-                                <div class="col-6"><label class="small fw-bold">Total ($)</label><input type="number" step="any" name="precio_total" id="log_precio" class="form-control" required></div>
-                            </div>
-                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="full" id="log_full" checked><label class="form-check-label small">Tanque Lleno</label></div>
+                <div class="modal-body p-4">
+                    <form action="?c=Dashboard&a=editVehicle" method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="id" value="<?= $vehiculo_actual['id'] ?? '' ?>">
+                        
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">PLACA / MATRÍCULA</label>
+                            <input type="text" name="placa" class="form-control rounded-3" required 
+                                   value="<?= htmlspecialchars($vehiculo_actual['placa'] ?? '') ?>" 
+                                   style="text-transform: uppercase;">
                         </div>
-                        <div class="col-md-7">
-                            <label class="small fw-bold mb-2">Ubicación</label>
-                            <div class="position-relative mb-2">
-                                <div class="input-group"><span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span><input type="text" id="addressSearch" class="form-control border-start-0" placeholder="Buscar sitio..."></div>
-                                <div id="search-results" class="shadow-sm rounded"></div>
-                            </div>
-                            <div id="selectMap" class="map-select border rounded"></div>
-                            <input type="hidden" name="nombre_estacion" id="log_estacion">
-                            <input type="hidden" name="latitud" id="log_lat"><input type="hidden" name="longitud" id="log_lng">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">MODELO / NOMBRE</label>
+                            <input type="text" name="modelo" class="form-control rounded-3" required 
+                                   value="<?= htmlspecialchars($vehiculo_actual['modelo'] ?? '') ?>">
                         </div>
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">DESCRIPCIÓN</label>
+                            <input type="text" name="descripcion" class="form-control rounded-3" 
+                                   value="<?= htmlspecialchars($vehiculo_actual['descripcion'] ?? '') ?>">
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-muted">CAP. TANQUE</label>
+                                <input type="number" step="0.1" name="capacidad_tanque" class="form-control rounded-3" required 
+                                       value="<?= $vehiculo_actual['capacidad_tanque'] ?? 12 ?>">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-muted">UNIDAD</label>
+                                <select name="unidad_consumo" class="form-select rounded-3">
+                                    <option value="km/gal" <?= ($vehiculo_actual['unidad_consumo'] ?? '') == 'km/gal' ? 'selected' : '' ?>>km/gal</option>
+                                    <option value="km/l" <?= ($vehiculo_actual['unidad_consumo'] ?? '') == 'km/l' ? 'selected' : '' ?>>km/l</option>
+                                    <option value="mpg" <?= ($vehiculo_actual['unidad_consumo'] ?? '') == 'mpg' ? 'selected' : '' ?>>mpg</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-muted">CAMBIAR FOTO (Opcional)</label>
+                            <input type="file" name="foto" class="form-control rounded-3" accept="image/*">
+                        </div>
+                        <button type="submit" class="btn btn-dark w-100 rounded-pill py-2 fw-bold">Guardar Cambios</button>
+                    </form>
                 </div>
-                <div class="modal-footer border-0"><button type="submit" class="btn btn-primary px-4 rounded-pill">Guardar Registro</button></div>
-            </form>
+            </div>
         </div>
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- MODAL REGISTRO TANQUEADA -->
+    <div class="modal fade" id="modalLog" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Registrar Tanqueada</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form action="?c=Dashboard&a=saveLog" method="POST">
+                        <input type="hidden" name="vehicle_id" value="<?= $vehiculo_actual['id'] ?? '' ?>">
+                        
+                        <!-- Campos Ocultos para Geo -->
+                        <input type="hidden" name="latitud" id="lat">
+                        <input type="hidden" name="longitud" id="lng">
+                        <input type="hidden" name="nombre_estacion" id="estacion_nombre">
 
-<script>
-    // --- LÓGICA DE MAPAS ---
-    <?php if($vehiculo_actual): ?>
-    if(document.getElementById('mainMap')) {
-        const mainMap = L.map('mainMap').setView([4.65, -74.1], 9);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mainMap);
-        const markers = <?= json_encode($charts['mapa']) ?>;
-        const group = L.featureGroup();
-        markers.forEach(m => L.marker([m.lat, m.lng]).addTo(mainMap).bindPopup(m.name).addTo(group));
-        if(markers.length > 0) mainMap.fitBounds(group.getBounds().pad(0.1));
-    }
+                        <div class="row g-3 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-muted">FECHA</label>
+                                <input type="datetime-local" name="fecha" class="form-control rounded-3" required 
+                                       value="<?= date('Y-m-d\TH:i') ?>">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-muted">ODÓMETRO (km)</label>
+                                <input type="number" step="0.1" name="odometro" class="form-control rounded-3 fw-bold" required placeholder="00000">
+                            </div>
+                        </div>
 
-    // Configuración Charts
-    const commonOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: false } } };
+                        <!-- MAPA INTERACTIVO -->
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">UBICACIÓN</label>
+                            <div id="mapPicker" style="height: 250px; width: 100%; border-radius: 8px; border: 1px solid #ddd;"></div>
+                            <small class="text-muted d-block mt-1">Arrastra el marcador para ajustar la ubicación</small>
+                        </div>
 
-    if(document.getElementById('chartCombined')) {
-        new Chart(document.getElementById('chartCombined'), {
+                        <div class="row g-3 mb-4">
+                            <div class="col-4">
+                                <label class="form-label small fw-bold text-muted">GALONES</label>
+                                <input type="number" step="0.01" name="galones" class="form-control rounded-3" required placeholder="0.00">
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label small fw-bold text-muted">TOTAL ($)</label>
+                                <input type="number" step="100" name="precio_total" class="form-control rounded-3" required placeholder="$ 0">
+                            </div>
+                            <div class="col-4 d-flex align-items-end">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="full" value="1" id="checkFull" checked>
+                                    <label class="form-check-label small" for="checkFull">
+                                        Tanque Lleno
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Alerta Geo -->
+                        <div id="geo-status" class="alert alert-light border small py-2 d-flex align-items-center gap-2 text-muted mb-4">
+                            <div class="spinner-border spinner-border-sm" role="status"></div>
+                            Obteniendo ubicación...
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 fw-bold shadow-sm">Guardar Registro</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script>
+        // 1. GEO-LOCALIZACIÓN AUTOMÁTICA
+        let mapPicker;
+        let markerPicker;
+
+        document.getElementById('modalLog').addEventListener('shown.bs.modal', function () {
+            if (!mapPicker) {
+                mapPicker = L.map('mapPicker').setView([4.6097, -74.0817], 13);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 19 }).addTo(mapPicker);
+                markerPicker = L.marker([4.6097, -74.0817], {draggable: true}).addTo(mapPicker);
+                markerPicker.on('dragend', function(e) {
+                    const pos = e.target.getLatLng();
+                    document.getElementById('lat').value = pos.lat.toFixed(6);
+                    document.getElementById('lng').value = pos.lng.toFixed(6);
+                    reverseGeocode(pos.lat, pos.lng);
+                });
+            }
+            setTimeout(() => { mapPicker.invalidateSize(); }, 200);
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        document.getElementById('lat').value = lat;
+                        document.getElementById('lng').value = lng;
+                        mapPicker.setView([lat, lng], 15);
+                        markerPicker.setLatLng([lat, lng]);
+                        reverseGeocode(lat, lng);
+                    },
+                    (error) => {
+                        const status = document.getElementById('geo-status');
+                        status.className = "alert alert-warning border-warning small py-2 mb-3";
+                        status.innerHTML = `<i class="bi bi-exclamation-triangle"></i> Ubicación no permitida. Arrastra el marcador en el mapa.`;
+                    }
+                );
+            }
+        });
+
+        function reverseGeocode(lat, lng) {
+            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`;
+            fetch(url).then(r => r.json()).then(data => {
+                let name = data.address.amenity || data.address.shop || data.address.road || "Ubicación Actual";
+                if(data.address.brand) name = data.address.brand + " " + name;
+                document.getElementById('estacion_nombre').value = name;
+                const status = document.getElementById('geo-status');
+                status.className = "alert alert-success border-success small py-2 mb-3";
+                status.innerHTML = `<i class="bi bi-geo-alt-fill"></i> ${name}`;
+            }).catch(() => {
+                document.getElementById('estacion_nombre').value = "Estación Desconocida";
+            });
+        }
+
+        // 2. GRÁFICA DE RENDIMIENTO
+        const ctxRend = document.getElementById('rendimientoChart').getContext('2d');
+        new Chart(ctxRend, {
             type: 'line',
             data: {
                 labels: <?= json_encode($charts['fechas']) ?>,
-                datasets: [{ 
-                    label: 'Rendimiento', 
-                    data: <?= json_encode($charts['rendimiento']) ?>, 
-                    borderColor: '#0d6efd', 
-                    backgroundColor: 'rgba(13, 110, 253, 0.05)', 
-                    borderWidth: 2,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#fff',
-                    pointBorderColor: '#0d6efd',
-                    fill: true, 
-                    tension: 0.4 
+                datasets: [{
+                    label: 'Rendimiento (km/gal)',
+                    data: <?= json_encode($charts['rendimiento']) ?>,
+                    borderColor: '#111', backgroundColor: 'rgba(0,0,0,0.05)', borderWidth: 2, pointBackgroundColor: '#fff', pointBorderColor: '#111', pointRadius: 4, tension: 0.4, fill: true
                 }]
             },
-            options: commonOptions
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: false, grid: { borderDash: [5, 5] } }, x: { grid: { display: false } } } }
         });
-        
-        new Chart(document.getElementById('chartMonthly'), {
+
+        // 3. GRÁFICA DE GASTOS
+        const ctxGastos = document.getElementById('gastosChart').getContext('2d');
+        new Chart(ctxGastos, {
             type: 'bar',
             data: {
                 labels: <?= json_encode(array_keys($charts['gasto_mensual'])) ?>,
-                datasets: [{ 
-                    label: 'Gasto', 
-                    data: <?= json_encode(array_values($charts['gasto_mensual'])) ?>, 
-                    backgroundColor: '#198754', 
-                    borderRadius: 4 
-                }]
+                datasets: [{ label: 'Gasto Mensual ($)', data: <?= json_encode(array_values($charts['gasto_mensual'])) ?>, backgroundColor: '#111', borderRadius: 4 }]
             },
-            options: commonOptions
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { borderDash: [5, 5] } }, x: { grid: { display: false } } } }
         });
-    }
 
-    // Modales
-    let selectMap, selectMarker;
-    const logModal = document.getElementById('logModal');
-    logModal.addEventListener('shown.bs.modal', function () {
-        if (!selectMap) {
-            selectMap = L.map('selectMap').setView([4.65, -74.1], 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(selectMap);
-            selectMarker = L.marker([4.65, -74.1], {draggable: true}).addTo(selectMap);
-            selectMarker.on('dragend', function(e) { updateLoc(e.target.getLatLng()); });
-            selectMap.on('click', function(e) { selectMarker.setLatLng(e.latlng); updateLoc(e.latlng); });
+        // 4. MAPA
+        const mapData = <?= json_encode($charts['mapa']) ?>;
+        if (mapData.length > 0) {
+            const lastPoint = mapData[0];
+            const map = L.map('map').setView([lastPoint.lat, lastPoint.lng], 12);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 19 }).addTo(map);
+            const blackIcon = L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
+            mapData.forEach(point => { L.marker([point.lat, point.lng], {icon: blackIcon}).addTo(map).bindPopup(`<b>${point.name}</b>`); });
+        } else {
+            const map = L.map('map').setView([4.6097, -74.0817], 11);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
         }
-        setTimeout(() => { selectMap.invalidateSize(); }, 200);
-    });
-    
-    // Buscador Map
-    document.getElementById('addressSearch').addEventListener('input', function(e) {
-        const q = e.target.value; const resDiv = document.getElementById('search-results');
-        if(q.length < 3) { resDiv.style.display='none'; return; }
-        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5`)
-            .then(r=>r.json()).then(d=>{
-                resDiv.innerHTML='';
-                if(d.length>0) {
-                    d.forEach(p=>{
-                        const div=document.createElement('div'); div.className='search-item small'; 
-                        div.innerHTML = `<i class="bi bi-geo-alt text-muted me-2"></i> ${p.display_name}`;
-                        div.onclick=()=>{
-                            selectMarker.setLatLng([p.lat, p.lon]); selectMap.setView([p.lat, p.lon], 16); updateLoc({lat:p.lat, lng:p.lon});
-                            document.getElementById('log_estacion').value = p.display_name.split(',')[0]; 
-                            document.getElementById('addressSearch').value = p.display_name.split(',')[0];
-                            resDiv.style.display='none';
-                        };
-                        resDiv.appendChild(div);
-                    });
-                    resDiv.style.display='block';
-                }
-            });
-    });
-    function updateLoc(ll) { document.getElementById('log_lat').value=ll.lat; document.getElementById('log_lng').value=ll.lng || ll.lon; }
-
-    window.openLogModal = function(data=null) {
-        document.getElementById('logModalTitle').innerText = data ? 'Editar' : 'Nuevo Registro';
-        document.getElementById('log_id').value = data ? data.id : '';
-        document.getElementById('log_fecha').value = data ? data.fecha : new Date().toISOString().split('T')[0];
-        document.getElementById('log_odo').value = data ? data.odometro : '';
-        document.getElementById('log_gal').value = data ? data.galones : '';
-        document.getElementById('log_precio').value = data ? data.precio_total : '';
-        document.getElementById('log_estacion').value = data ? data.nombre_estacion : '';
-        document.getElementById('addressSearch').value = data ? data.nombre_estacion : '';
-        document.getElementById('lbl_unidad').innerText = 'Cant. (<?= $vehiculo_actual['unidad_combustible'] ?>)';
-        new bootstrap.Modal(logModal).show();
-    }
-    <?php endif; ?>
-
-    // Modal Vehículo
-    const vehModal = new bootstrap.Modal(document.getElementById('vehicleModal'));
-    window.openVehicleModal = function(data = null) {
-        document.getElementById('vehicleModalTitle').innerText = data ? 'Editar Vehículo' : 'Nuevo Vehículo';
-        document.getElementById('v_id').value = data ? data.id : '';
-        document.getElementById('v_nombre').value = data ? data.nombre : '';
-        document.getElementById('v_marca').value = data ? data.marca : '';
-        document.getElementById('v_modelo').value = data ? data.modelo : '';
-        document.getElementById('v_desc').value = data ? data.descripcion : '';
-        document.getElementById('v_capacidad').value = data ? data.capacidad_tanque : 15;
-        if (data) {
-            document.getElementById('v_tipo').value = data.tipo_combustible;
-            document.getElementById('v_unidad').value = data.unidad_combustible;
-            document.getElementById('v_consumo').value = data.unidad_consumo;
-        }
-        vehModal.show();
-    }
-</script>
+    </script>
 </body>
 </html>
