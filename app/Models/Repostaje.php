@@ -75,5 +75,15 @@ class Repostaje {
             die("Error SQL en Repostaje::save(): " . $e->getMessage());
         }
     }
+
+        // --- AGREGAR ESTA FUNCIÓN AL FINAL ---
+    public function getLastByVehicle($vehicleId) {
+        // Busca el último repostaje ordenado por odómetro descendente
+        // Nota: uso 'vehiculo_id' porque así lo tienes en tu base de datos según tu código
+        $stmt = $this->pdo->prepare("SELECT * FROM repostajes WHERE vehiculo_id = ? ORDER BY odometro DESC LIMIT 1");
+        $stmt->execute([$vehicleId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
 }
 ?>

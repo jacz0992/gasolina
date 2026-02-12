@@ -31,20 +31,20 @@ class DashboardController extends Controller
             foreach($misVehiculos as $v) {
                 if($v['id'] == $vId) { $vehiculoActual = $v; break; }
             }
-            // Fallback si el ID de la URL no es válido
             if (!$vehiculoActual) $vehiculoActual = $misVehiculos[0];
         }
 
-        // 4. Inicializar Datos Vacíos
-        $allLogs = [];
+        // 4. Inicializar Datos
         $logsForTable = [];
         $pagination = [];
-
+        
         $stats = [
             'promedio_rend' => 0,
             'rango_estimado' => 0,
             'gasto_mes' => 0,
-            'mes_nombre' => date('M Y')
+            'mes_nombre' => date('F Y'),
+            'tendencia_rend' => 0,
+            'tendencia_gasto' => 0
         ];
 
         $charts = [
@@ -54,107 +54,156 @@ class DashboardController extends Controller
             'mapa' => []
         ];
 
-        // 5. CÁLCULOS MATEMÁTICOS (Si hay vehículo)
+        // 5. LÓGICA PRINCIPAL
         if ($vehiculoActual) {
-            // A. Obtener TODOS los logs para estadísticas
-            $allLogs = $repostajeModel->getByVehicle($vehiculoActual['id']);
+            // Obtener TODOS los logs sin filtrar primero para cálculos globales (tendencias históricas)
+            $rawLogs = $repostajeModel->getByVehicle($vehiculoActual['id']);
 
-            // --- B. LOGICA DE PAGINACIÓN ---
+            // --- FILTRO DE FECHAS (Nuevo) ---
+            $from = $_GET['from'] ?? null;
+            $to   = $_GET['to'] ?? null;
+            
+            // Logs Filtrados (para la tabla y gráficas específicas)
+            $filteredLogs = $rawLogs; 
+
+            if ($from && $to) {
+                $filteredLogs = array_filter($rawLogs, function($log) use ($from, $to) {
+                    $fechaLog = date('Y-m-d', strtotime($log['fecha']));
+                    return $fechaLog >= $from && $fechaLog <= $to;
+                });
+                // Re-indexar array después de filtrar
+                $filteredLogs = array_values($filteredLogs);
+            }
+
+            // --- A. PAGINACIÓN (Usamos logs filtrados) ---
             $itemsPerPage = 10;
-            $totalItems = count($allLogs);
+            $totalItems = count($filteredLogs);
             $totalPages = max(1, ceil($totalItems / $itemsPerPage));
             
             $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-            if ($currentPage < 1) $currentPage = 1;
-            if ($currentPage > $totalPages) $currentPage = $totalPages;
+            $currentPage = max(1, min($currentPage, $totalPages));
             
             $offset = ($currentPage - 1) * $itemsPerPage;
-            
-            // Recortar array para la tabla
-            $logsForTable = array_slice($allLogs, $offset, $itemsPerPage);
+            $logsForTable = array_slice($filteredLogs, $offset, $itemsPerPage);
             
             $pagination = [
                 'current' => $currentPage,
                 'total' => $totalPages,
-                'v_id' => $vehiculoActual['id']
+                'v_id' => $vehiculoActual['id'],
+                'from' => $from, // Pasar filtros a la vista para mantenerlos en links
+                'to' => $to
             ];
 
-            // Procesar logs en orden cronológico (antiguo a nuevo) para cálculos
-            $logsAsc = array_reverse($allLogs);
+            // --- B. ESTADÍSTICAS GLOBALES (Usamos todos los logs para tendencias generales) ---
+            $mesActual = date('Y-m');
+            $mesPasado = date('Y-m', strtotime('-1 month'));
+            
+            $logsEsteMes = [];
+            $logsMesPasado = [];
+            
+            foreach ($rawLogs as $log) {
+                if (strpos($log['fecha'], $mesActual) === 0) $logsEsteMes[] = $log;
+                if (strpos($log['fecha'], $mesPasado) === 0) $logsMesPasado[] = $log;
+            }
 
+            // Gasto y Tendencia
+            $gastoEsteMes = array_sum(array_column($logsEsteMes, 'precio_total'));
+            $gastoMesPasado = array_sum(array_column($logsMesPasado, 'precio_total'));
+            
+            if ($gastoMesPasado > 0) {
+                $stats['tendencia_gasto'] = (($gastoEsteMes - $gastoMesPasado) / $gastoMesPasado) * 100;
+            }
+            $stats['gasto_mes'] = $gastoEsteMes;
+
+            // Rendimiento y Tendencia
+            $rendEsteMes = $this->calcularPromedioRendimiento($logsEsteMes);
+            $rendMesPasado = $this->calcularPromedioRendimiento($logsMesPasado);
+
+            if ($rendMesPasado > 0) {
+                $stats['tendencia_rend'] = (($rendEsteMes - $rendMesPasado) / $rendMesPasado) * 100;
+            }
+
+            // --- C. PROCESAMIENTO HISTÓRICO (Usamos logs filtrados para gráficas coherentes con la tabla) ---
+            // Ordenamos cronológicamente (antiguo -> nuevo) para procesar
+            $logsAsc = array_reverse($filteredLogs); 
             $prevOdo = 0;
-            $totalRend = 0;
-            $countRend = 0;
-            $gastosPorMes = [];
+            $totalRendGral = 0;
+            $countRendGral = 0;
+            $gastosPorMesGrafica = [];
 
             foreach ($logsAsc as $log) {
-                // A) Gasto Mensual
+                // Gráfica Gastos
                 $mesAnio = date('M Y', strtotime($log['fecha']));
-                if (!isset($gastosPorMes[$mesAnio])) $gastosPorMes[$mesAnio] = 0;
-                $gastosPorMes[$mesAnio] += $log['precio_total'];
+                if (!isset($gastosPorMesGrafica[$mesAnio])) $gastosPorMesGrafica[$mesAnio] = 0;
+                $gastosPorMesGrafica[$mesAnio] += $log['precio_total'];
 
-                // B) Rendimiento
+                // Rendimiento
                 $currentRend = null;
                 if ($prevOdo > 0 && $log['odometro'] > $prevOdo && $log['galones'] > 0) {
                     $dist = $log['odometro'] - $prevOdo;
                     $val = $dist / $log['galones'];
 
-                    // Filtro de coherencia
                     if ($val > 0.5 && $val < 200) {
-                        $totalRend += $val;
-                        $countRend++;
+                        $totalRendGral += $val;
+                        $countRendGral++;
                         $currentRend = round($val, 1);
                     }
                 }
 
-                // C) Datos para Gráficos
+                // Datos Gráficas
                 if ($currentRend !== null) {
                     $charts['fechas'][] = date('d/m', strtotime($log['fecha']));
                     $charts['rendimiento'][] = $currentRend;
                 }
 
-                // D) Mapa
+                // Mapa
                 if ($log['latitud']) {
                     $charts['mapa'][] = [
                         'lat' => $log['latitud'],
                         'lng' => $log['longitud'],
-                        'name' => $log['nombre_estacion'] . " (" . date('d/m', strtotime($log['fecha'])) . ")"
+                        'name' => $log['nombre_estacion']
                     ];
                 }
 
                 $prevOdo = $log['odometro'];
             }
 
-            // 6. Resumen Final de KPIs
-            $stats['promedio_rend'] = $countRend > 0 ? ($totalRend / $countRend) : 0;
+            // Promedios Finales
+            $stats['promedio_rend'] = $countRendGral > 0 ? ($totalRendGral / $countRendGral) : 0;
             $stats['rango_estimado'] = $stats['promedio_rend'] * $vehiculoActual['capacidad_tanque'];
-
-            if (!empty($gastosPorMes)) {
-                $stats['gasto_mes'] = end($gastosPorMes);
-                $stats['mes_nombre'] = key($gastosPorMes);
-            }
             
-            $charts['gasto_mensual'] = $gastosPorMes;
+            $charts['gasto_mensual'] = $gastosPorMesGrafica;
         }
 
-        // 7. Renderizar Vista
+        // 6. Renderizar Vista
         $this->view('dashboard/index', [
-            'user_name' => $_SESSION['user_name'],
+            'user_name' => $_SESSION['user_name'] ?? 'Usuario',
             'mis_vehiculos' => $misVehiculos,
             'vehiculo_actual' => $vehiculoActual,
-            'logs' => $logsForTable,
+            'logs' => $logsForTable, // Aquí van los logs ya paginados y filtrados
             'stats' => $stats,
             'charts' => $charts,
             'pagination' => $pagination
         ]);
     }
 
-    // --- ACCIÓN: GUARDAR VEHÍCULO (NUEVO) ---
-    public function saveVehicle()
-    {
+    private function calcularPromedioRendimiento($logs) {
+        $total = 0; $count = 0;
+        foreach ($logs as $log) {
+            if (isset($log['rendimiento']) && $log['rendimiento'] > 0) {
+                $total += $log['rendimiento'];
+                $count++;
+            }
+        }
+        return $count > 0 ? $total / $count : 0;
+    }
+
+    // --- ACCIONES CRUD (Se mantienen igual) ---
+    public function saveVehicle() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION['user_id'])) {
             $data = $_POST;
-            
+            if(empty($data['capacidad_tanque'])) $data['capacidad_tanque'] = 12;
+
             if (isset($_FILES['foto']) && $_FILES['foto']['error'] == 0) {
                 $ext = pathinfo($_FILES['foto']['name'], PATHINFO_EXTENSION);
                 $filename = uniqid() . "." . $ext;
@@ -169,69 +218,65 @@ class DashboardController extends Controller
         }
     }
 
-    // --- ACCIÓN: EDITAR VEHÍCULO (MODIFICACIÓN) ---
-    public function editVehicle()
-    {
+    public function editVehicle() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION['user_id'])) {
             $data = $_POST;
             $vehicleId = $data['id'];
             
-            // Manejo de Foto (si suben una nueva)
             if (isset($_FILES['foto']) && $_FILES['foto']['error'] == 0) {
                 $ext = pathinfo($_FILES['foto']['name'], PATHINFO_EXTENSION);
                 $filename = uniqid() . "." . $ext;
-                
                 if(move_uploaded_file($_FILES['foto']['tmp_name'], "uploads/" . $filename)) {
                     $data['foto'] = $filename;
                 }
             }
 
             $model = new Vehiculo();
-            // Usamos el método update específico que agregaste al modelo
             $model->update($vehicleId, $data, $_SESSION['user_id']);
-            
             $this->redirect("?c=Dashboard&v=$vehicleId");
         }
     }
 
-    // --- ACCIÓN: GUARDAR LOG ---
-    public function saveLog()
-    {
+    public function saveLog() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION['user_id'])) {
             $model = new Repostaje();
             $vid = $_POST['vehicle_id'];
-
             $data = $_POST;
             $data['user_id'] = $_SESSION['user_id'];
+            
+            if (isset($data['full']) && $data['full'] == 1) {
+                $lastLog = $model->getLastByVehicle($vid);
+                if ($lastLog && $data['odometro'] > $lastLog['odometro']) {
+                     $dist = $data['odometro'] - $lastLog['odometro'];
+                     $data['rendimiento'] = $dist / ($data['galones'] > 0 ? $data['galones'] : 1);
+                }
+            }
 
             $model->save($data);
-
             $this->redirect("?c=Dashboard&v=$vid");
         }
     }
 
-    // --- ACCIÓN: BORRAR LOG ---
-    public function deleteLog()
-    {
+    public function deleteLog() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $model = new Repostaje();
-            $model->delete($_POST['id'], $_POST['vehicle_id']);
-            $this->redirect("?c=Dashboard&v=" . $_POST['vehicle_id']);
+            if(isset($_POST['id']) && isset($_POST['vehicle_id'])) {
+                $model->delete($_POST['id'], $_POST['vehicle_id']);
+                $this->redirect("?c=Dashboard&v=" . $_POST['vehicle_id']);
+            } else {
+                $this->redirect("?c=Dashboard");
+            }
         }
     }
 
-        // --- ACCIÓN: BORRAR VEHÍCULO ---
-    public function deleteVehicle()
-    {
+    public function deleteVehicle() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION['user_id'])) {
             $id = $_POST['id'] ?? null;
             if ($id) {
                 $model = new Vehiculo();
                 $model->delete($id, $_SESSION['user_id']);
             }
-            // Redirigir al dashboard (cargará el siguiente vehículo o la pantalla de bienvenida)
             $this->redirect("?c=Dashboard");
         }
     }
-
 }

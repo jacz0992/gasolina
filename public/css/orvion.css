@@ -1,238 +1,178 @@
-/* ORVION DESIGN SYSTEM - Fleet Manager */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
+/* --- VARIABLES --- */
 :root {
-    /* Paleta Orvion */
-    --bg-color: #F2F2F2;           /* Gris claro de fondo */
-    --card-bg: #FFFFFF;            /* Blanco puro */
-    --primary-lime: #C7F33C;       /* El verde lima eléctrico */
-    --primary-black: #111111;      /* Casi negro */
-    --text-main: #111111;
-    --text-muted: #888888;
-    
-    /* Variables de Estilo */
-    --radius-card: 24px;           /* Bordes muy redondos */
-    --radius-btn: 12px;            /* Botones intermedios */
-    --radius-pill: 50px;           /* Botones píldora */
-    --shadow-soft: 0 10px 40px -10px rgba(0,0,0,0.08); /* Sombra difusa estilo Apple */
-    --font-main: 'Inter', sans-serif;
+    --primary-color: #111111;
+    --secondary-color: #666666;
+    --accent-blue: #2563EB;
+    --bg-light: #F5F7FA;
+    --sidebar-width: 260px;
+    --topbar-height: 70px;
 }
 
 body {
-    background-color: var(--bg-color);
-    font-family: var(--font-main);
-    color: var(--text-main);
-    -webkit-font-smoothing: antialiased;
-    letter-spacing: -0.02em; /* Kerning ajustado estilo moderno */
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-light);
+    color: var(--primary-color);
+    overflow-x: hidden;
 }
 
-/* --- NUEVOS ESTILOS PARA EL HEADER DEL VEHÍCULO --- */
-
-/* Badge de Marca (Estilo Píldora Gris) */
-.badge-orvion {
-    background-color: #F0F0F0;
-    color: var(--primary-black);
-    padding: 6px 14px;
-    border-radius: 99px;
-    font-weight: 500;
-    font-size: 0.8rem;
-    letter-spacing: -0.01em;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-
-/* Imagen del Vehículo (Estilo Squircle) */
-.vehicle-avatar-container {
-    position: relative;
-    width: 120px;
-    height: 120px;
-}
-.vehicle-avatar {
+/* --- LAYOUT STRUCTURE (Fix para Sidebar) --- */
+.layout-wrapper {
+    display: flex;
+    min-height: 100vh;
     width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 28px; /* Radio grande pero no circular */
-    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
 }
-.btn-edit-icon {
-    position: absolute;
-    bottom: -5px;
-    right: -5px;
+
+.sidebar {
+    width: var(--sidebar-width);
+    background-color: #ffffff;
+    border-right: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1050; /* Mayor que el contenido */
+    transition: transform 0.3s ease;
+}
+
+.main-content {
+    flex-grow: 1;
+    margin-left: var(--sidebar-width); /* Empuja el contenido a la derecha */
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    width: calc(100% - var(--sidebar-width)); /* Ancho restante */
+    background-color: var(--bg-light);
+}
+
+/* --- RESPONSIVE SIDEBAR (Móvil) --- */
+@media (max-width: 991.98px) {
+    .sidebar {
+        transform: translateX(-100%); /* Oculto por defecto en móvil */
+    }
+    .sidebar.show {
+        transform: translateX(0); /* Mostrar al activar toggle */
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    .main-content {
+        margin-left: 0; /* Sin margen en móvil */
+        width: 100%;
+    }
+}
+
+/* --- SIDEBAR COMPONENTS --- */
+.sidebar-header {
+    height: var(--topbar-height);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+}
+
+.sidebar-menu {
+    flex-grow: 1;
+    padding: 24px 16px;
+    overflow-y: auto;
+}
+
+.nav-link-custom {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    color: var(--secondary-color);
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s;
+    margin-bottom: 4px;
+}
+
+.nav-link-custom:hover {
+    background-color: #f8f9fa;
+    color: var(--primary-color);
+}
+
+.nav-link-custom.active {
+    background-color: var(--accent-blue);
+    color: white;
+}
+
+.nav-link-custom i {
+    font-size: 1.1rem;
+}
+
+/* --- TOPBAR --- */
+.topbar {
+    height: var(--topbar-height);
+    background-color: white;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+@media (max-width: 991.98px) {
+    .topbar {
+        padding: 0 16px;
+    }
+}
+
+/* --- CARDS & WIDGETS --- */
+.card-widget {
     background: white;
-    border: 1px solid #eee;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
+    border-radius: 16px;
+    padding: 24px;
+    height: 100%;
+    position: relative;
+    /* Sombras y bordes manejados por clases Bootstrap */
+}
+
+.icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--primary-black);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    transition: transform 0.2s;
-    text-decoration: none;
-}
-.btn-edit-icon:hover {
-    transform: scale(1.1);
-    background: var(--primary-black);
-    color: white;
+    font-size: 1.25rem;
 }
 
-/* Títulos Grandes */
-.display-title {
-    font-size: 2rem;
-    font-weight: 700;
-    letter-spacing: -0.04em;
-    color: var(--primary-black);
-    line-height: 1.1;
+.icon-box.blue { background-color: #EFF6FF; color: var(--accent-blue); }
+.icon-box.green { background-color: #F0FDF4; color: #16A34A; }
+.icon-box.orange { background-color: #FFF7ED; color: #EA580C; }
+.icon-box.red { background-color: #FEF2F2; color: #DC2626; }
+
+/* --- ANIMACIONES --- */
+.fade-in {
+    animation: fadeIn 0.4s ease-in-out;
 }
 
-/* Separador Vertical */
-.vr-soft {
-    width: 1px;
-    background-color: #eee;
-    height: 40px;
-    margin: 0 1.5rem;
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
+/* --- UTILIDADES --- */
+.rounded-4 { border-radius: 16px !important; }
+.object-fit-cover { object-fit: cover; }
+.pointer-events-none { pointer-events: none; }
 
-/* NAVBAR FLOTANTE */
-.navbar {
-    background: rgba(255, 255, 255, 0.8) !important;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-    padding: 1rem 1.5rem;
-    margin-bottom: 2rem;
-}
-.navbar-brand {
-    font-weight: 700;
-    font-size: 1.2rem;
-    color: var(--primary-black) !important;
+.hover-bg-light:hover {
+    background-color: #f8f9fa; /* Gris muy suave al pasar el mouse */
+    transition: background-color 0.2s ease;
 }
 
-/* TARJETAS (CARDS) */
-.card {
-    background: var(--card-bg);
-    border: none;
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-soft);
-    padding: 1.5rem;
-    transition: transform 0.2s ease;
-}
-.card-header {
-    background: transparent;
-    border-bottom: none;
-    padding-bottom: 0;
-    font-weight: 600;
-    font-size: 1rem;
+.hover-opacity-100:hover {
+    opacity: 1 !important;
 }
 
-/* KITS DE ESTADÍSTICAS (KPIs) - ESTILO NEGRO Y LIMA */
-.card-stat {
-    position: relative;
-    overflow: hidden;
-}
-/* Variante Negra (Como la tarjeta de $3.7k) */
-.card-stat.black-theme {
-    background: var(--primary-black);
-    color: white;
-}
-.card-stat.black-theme h6 { color: #888; }
-.card-stat.black-theme h2 { color: white; }
-
-/* Variante Lima (Como el gráfico pequeño) */
-.card-stat.lime-theme {
-    background: var(--primary-lime);
-    color: var(--primary-black);
+/* Ajuste para que la tabla no se vea apretada */
+.table td {
+    vertical-align: middle;
 }
 
-/* BOTONES */
-.btn-primary {
-    background-color: var(--primary-black);
-    border: none;
-    border-radius: var(--radius-pill);
-    padding: 10px 24px;
-    font-weight: 500;
-    font-size: 0.9rem;
-    transition: all 0.2s;
-}
-.btn-primary:hover {
-    background-color: #333;
-    transform: translateY(-2px);
-}
-
-/* Botón Secundario (Estilo gris claro) */
-.btn-outline-secondary {
-    background: #f0f0f0;
-    border: none;
-    color: var(--primary-black);
-    border-radius: var(--radius-pill);
-    font-weight: 500;
-}
-.btn-outline-secondary:hover {
-    background: #e0e0e0;
-}
-
-/* TIPOGRAFÍA */
-h1, h2, h3, h4, h5, h6 {
-    font-weight: 600;
-    letter-spacing: -0.03em;
-}
-.text-muted {
-    color: var(--text-muted) !important;
-    font-weight: 400;
-}
-
-/* TABS (PESTAÑAS) - Estilo Cápsula */
-.nav-tabs {
-    border: none;
-    background: #f0f0f0;
-    padding: 4px;
-    border-radius: 99px;
-    display: inline-flex;
-}
-.nav-tabs .nav-link {
-    border: none;
-    border-radius: 99px;
-    color: #666;
-    padding: 6px 16px;
-    font-size: 0.85rem;
-    font-weight: 500;
-}
-.nav-tabs .nav-link.active {
-    background: white;
-    color: black;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-/* FORMULARIOS */
-.form-control, .form-select {
-    background: #f9f9f9;
-    border: 1px solid transparent;
-    border-radius: 12px;
-    padding: 12px;
-    font-size: 0.95rem;
-}
-.form-control:focus {
-    background: white;
-    border-color: var(--primary-black);
-    box-shadow: none;
-}
-
-/* Links visibles sobre navbar clara */
-.navbar .nav-link,
-.navbar .navbar-toggler,
-.navbar .navbar-toggler-icon {
-  color: var(--primary-black) !important;
-}
-
-/* Dropdown legible */
-.navbar .dropdown-menu {
-  border: 1px solid rgba(0,0,0,0.06);
-  border-radius: 16px;
-  box-shadow: var(--shadow-soft);
-}
-.navbar .dropdown-item {
-  padding: 10px 14px;
-}
