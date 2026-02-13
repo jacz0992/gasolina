@@ -176,3 +176,68 @@ body {
     vertical-align: middle;
 }
 
+
+/* --- ESTILOS RESPONSIVOS PARA TABLA VEHÍCULOS --- */
+@media (max-width: 768px) {
+    /* Ocultar encabezados de tabla */
+    .table-custom thead {
+        display: none;
+    }
+
+    /* Convertir filas en tarjetas */
+    .table-custom tbody, 
+    .table-custom tr, 
+    .table-custom td {
+        display: block;
+        width: 100%;
+    }
+
+    .table-custom tr {
+        margin-bottom: 1rem;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        padding: 1rem;
+    }
+
+    /* Ajustar celdas */
+    .table-custom td {
+        padding: 0.5rem 0;
+        text-align: left;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .table-custom td:last-child {
+        border-bottom: none;
+        padding-top: 1rem;
+        justify-content: center;
+    }
+
+    /* Etiquetas para identificar datos en móvil */
+    .table-custom td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        font-size: 0.75rem;
+        color: #64748b;
+        text-transform: uppercase;
+        margin-right: 1rem;
+    }
+    
+    /* Ocultar label para la primera fila (Foto/Nombre) y acciones */
+    .table-custom td:first-child::before,
+    .table-custom td:last-child::before {
+        display: none;
+    }
+
+    /* Ajustes específicos */
+    .vehicle-img { width: 56px; height: 56px; }
+    .progress-thin { height: 8px; width: 100px; } /* Barra más pequeña en móvil */
+    
+    /* Buscador full width */
+    .topbar { padding: 0 1rem !important; }
+}
+

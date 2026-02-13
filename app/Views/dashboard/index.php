@@ -43,7 +43,7 @@
             <a href="#" class="nav-link-custom active">
                 <i class="bi bi-grid-1x2-fill"></i> Dashboard
             </a>
-            <a href="#" class="nav-link-custom">
+            <a href="?c=Vehiculos" class="nav-link-custom">
                 <i class="bi bi-car-front-fill"></i> Vehículos
             </a>
             <a href="#" class="nav-link-custom">
@@ -57,17 +57,48 @@
             </a>
         </nav>
 
+                <!-- PIE DEL SIDEBAR (PERFIL) -->
         <div class="p-3 mt-auto border-top bg-light">
              <div class="d-flex align-items-center gap-3">
-                <div class="bg-white rounded-circle d-flex align-items-center justify-content-center text-secondary border shadow-sm" style="width: 40px; height: 40px;">
-                    <i class="bi bi-person-fill fs-5"></i>
-                </div>
+                
+                <!-- FOTO DE PERFIL -->
+                <a href="?c=Auth&a=profile" class="text-decoration-none">
+                    <?php 
+                    // Verificamos si existe foto en la sesión (o variable pasada) y si el archivo físico existe
+                    $fotoPerfil = $_SESSION['user_photo'] ?? null; 
+                    $rutaFoto = "public/uploads/" . $fotoPerfil;
+                    
+                    if ($fotoPerfil && file_exists($rutaFoto)): 
+                    ?>
+                        <img src="<?= $rutaFoto ?>" 
+                             class="rounded-circle border shadow-sm object-fit-cover" 
+                             style="width: 45px; height: 45px;" 
+                             alt="Perfil">
+                    <?php else: ?>
+                        <!-- Avatar por defecto si no hay foto -->
+                        <div class="bg-white rounded-circle d-flex align-items-center justify-content-center text-secondary border shadow-sm" style="width: 45px; height: 45px;">
+                            <i class="bi bi-person-fill fs-4"></i>
+                        </div>
+                    <?php endif; ?>
+                </a>
+                
+                <!-- Info Usuario -->
                 <div class="overflow-hidden">
-                    <p class="mb-0 small fw-bold text-dark text-truncate"><?= htmlspecialchars($user_name ?? 'Usuario') ?></p>
-                    <a href="?c=Auth&a=logout" class="x-small text-danger text-decoration-none fw-bold" style="font-size: 0.75rem;">Cerrar Sesión</a>
+                    <a href="?c=Auth&a=profile" class="text-decoration-none text-dark">
+                        <p class="mb-0 small fw-bold text-truncate hover-text-primary" style="max-width: 120px;">
+                            <?= htmlspecialchars($user_name ?? 'Usuario') ?>
+                        </p>
+                    </a>
+                    <div class="d-flex gap-2 align-items-center">
+                        <a href="?c=Auth&a=profile" class="x-small text-muted text-decoration-none fw-medium" style="font-size: 0.75rem;">Mi Perfil</a>
+                        <span class="text-muted x-small opacity-50">|</span>
+                        <a href="?c=Auth&a=logout" class="x-small text-danger text-decoration-none fw-bold" style="font-size: 0.75rem;">Salir</a>
+                    </div>
                 </div>
             </div>
         </div>
+
+
     </aside>
 
     <!-- 2. MAIN CONTENT -->
