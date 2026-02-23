@@ -63,7 +63,7 @@
             <a href="?c=Vehiculos" class="nav-link-custom active">
                 <i class="bi bi-car-front-fill"></i> Vehículos
             </a>
-            <a href="#" class="nav-link-custom">
+            <a href="?c=Reportes" class="nav-link-custom">
                 <i class="bi bi-file-earmark-bar-graph"></i> Reportes
             </a>
             <a href="#" class="nav-link-custom">

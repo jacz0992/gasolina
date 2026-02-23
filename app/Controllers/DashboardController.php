@@ -39,13 +39,19 @@ class DashboardController extends Controller
         $pagination = [];
         
         $stats = [
-            'promedio_rend' => 0,
-            'rango_estimado' => 0,
+            'rend_cal_mes' => 0,
+            'tend_rend_cal' => 0,
+            'rango_cal_mes' => 0,
+
+            'rend_full_mes' => 0,
+            'tend_rend_full' => 0,
+            'rango_full_mes' => 0,
+
             'gasto_mes' => 0,
             'mes_nombre' => date('F Y'),
-            'tendencia_rend' => 0,
             'tendencia_gasto' => 0
-        ];
+            ];
+
 
         $charts = [
             'fechas' => [],
@@ -95,85 +101,157 @@ class DashboardController extends Controller
             ];
 
             // --- B. ESTADÍSTICAS GLOBALES (Usamos todos los logs para tendencias generales) ---
-            $mesActual = date('Y-m');
-            $mesPasado = date('Y-m', strtotime('-1 month'));
-            
-            $logsEsteMes = [];
-            $logsMesPasado = [];
-            
-            foreach ($rawLogs as $log) {
-                if (strpos($log['fecha'], $mesActual) === 0) $logsEsteMes[] = $log;
-                if (strpos($log['fecha'], $mesPasado) === 0) $logsMesPasado[] = $log;
-            }
+                $mesActual = date('Y-m');
+                $mesPasado = date('Y-m', strtotime('-1 month'));
 
-            // Gasto y Tendencia
-            $gastoEsteMes = array_sum(array_column($logsEsteMes, 'precio_total'));
-            $gastoMesPasado = array_sum(array_column($logsMesPasado, 'precio_total'));
-            
-            if ($gastoMesPasado > 0) {
-                $stats['tendencia_gasto'] = (($gastoEsteMes - $gastoMesPasado) / $gastoMesPasado) * 100;
-            }
-            $stats['gasto_mes'] = $gastoEsteMes;
+                $logsEsteMes = [];
+                $logsMesPasado = [];
 
-            // Rendimiento y Tendencia
-            $rendEsteMes = $this->calcularPromedioRendimiento($logsEsteMes);
-            $rendMesPasado = $this->calcularPromedioRendimiento($logsMesPasado);
+                foreach ($rawLogs as $log) {
+                    if (strpos($log['fecha'], $mesActual) === 0) $logsEsteMes[] = $log;
+                    if (strpos($log['fecha'], $mesPasado) === 0) $logsMesPasado[] = $log;
+                } // <- IMPORTANTE: cerrar el foreach aquí
 
-            if ($rendMesPasado > 0) {
-                $stats['tendencia_rend'] = (($rendEsteMes - $rendMesPasado) / $rendMesPasado) * 100;
-            }
+                $inicioMesActualTs = strtotime(date('Y-m-01'));
+$inicioMesPasadoTs = strtotime(date('Y-m-01', strtotime('-1 month')));
 
-            // --- C. PROCESAMIENTO HISTÓRICO (Usamos logs filtrados para gráficas coherentes con la tabla) ---
-            // Ordenamos cronológicamente (antiguo -> nuevo) para procesar
-            $logsAsc = array_reverse($filteredLogs); 
-            $prevOdo = 0;
-            $totalRendGral = 0;
-            $countRendGral = 0;
-            $gastosPorMesGrafica = [];
+$getPrevLogBefore = function(array $logs, int $startTs) {
+    $best = null;
+    $bestTs = null;
 
-            foreach ($logsAsc as $log) {
-                // Gráfica Gastos
-                $mesAnio = date('M Y', strtotime($log['fecha']));
-                if (!isset($gastosPorMesGrafica[$mesAnio])) $gastosPorMesGrafica[$mesAnio] = 0;
-                $gastosPorMesGrafica[$mesAnio] += $log['precio_total'];
-
-                // Rendimiento
-                $currentRend = null;
-                if ($prevOdo > 0 && $log['odometro'] > $prevOdo && $log['galones'] > 0) {
-                    $dist = $log['odometro'] - $prevOdo;
-                    $val = $dist / $log['galones'];
-
-                    if ($val > 0.5 && $val < 200) {
-                        $totalRendGral += $val;
-                        $countRendGral++;
-                        $currentRend = round($val, 1);
-                    }
-                }
-
-                // Datos Gráficas
-                if ($currentRend !== null) {
-                    $charts['fechas'][] = date('d/m', strtotime($log['fecha']));
-                    $charts['rendimiento'][] = $currentRend;
-                }
-
-                // Mapa
-                if ($log['latitud']) {
-                    $charts['mapa'][] = [
-                        'lat' => $log['latitud'],
-                        'lng' => $log['longitud'],
-                        'name' => $log['nombre_estacion']
-                    ];
-                }
-
-                $prevOdo = $log['odometro'];
-            }
-
-            // Promedios Finales
-            $stats['promedio_rend'] = $countRendGral > 0 ? ($totalRendGral / $countRendGral) : 0;
-            $stats['rango_estimado'] = $stats['promedio_rend'] * $vehiculoActual['capacidad_tanque'];
-            
-            $charts['gasto_mensual'] = $gastosPorMesGrafica;
+    foreach ($logs as $l) {
+        $ts = strtotime($l['fecha']);
+        if ($ts < $startTs && ($bestTs === null || $ts > $bestTs)) {
+            $best = $l;
+            $bestTs = $ts;
         }
+    }
+    return $best;
+};
+
+
+$prevAntesMesActual = $getPrevLogBefore($rawLogs, $inicioMesActualTs);
+$prevAntesMesPasado = $getPrevLogBefore($rawLogs, $inicioMesPasadoTs);
+
+// --- Rendimiento MES CALENDARIO (solo logs del mes) ---
+$rendCalEsteMes = $this->calcularPromedioRendimiento($logsEsteMes);
+$rendCalMesPasado = $this->calcularPromedioRendimiento($logsMesPasado);
+
+$stats['rend_cal_mes'] = $rendCalEsteMes;
+$stats['rango_cal_mes'] = $stats['rend_cal_mes'] * (float)$vehiculoActual['capacidad_tanque'];
+
+if ($rendCalMesPasado > 0) {
+    $stats['tend_rend_cal'] = (($rendCalEsteMes - $rendCalMesPasado) / $rendCalMesPasado) * 100;
+}
+
+// --- Rendimiento FULL‑TANK CONTINUO (incluye el log anterior) ---
+$logsEsteMesFull = $logsEsteMes;
+if ($prevAntesMesActual) $logsEsteMesFull[] = $prevAntesMesActual;
+
+$logsMesPasadoFull = $logsMesPasado;
+if ($prevAntesMesPasado) $logsMesPasadoFull[] = $prevAntesMesPasado;
+
+$rendFullEsteMes = $this->calcularPromedioRendimiento($logsEsteMesFull);
+$rendFullMesPasado = $this->calcularPromedioRendimiento($logsMesPasadoFull);
+
+$stats['rend_full_mes'] = $rendFullEsteMes;
+$stats['rango_full_mes'] = $stats['rend_full_mes'] * (float)$vehiculoActual['capacidad_tanque'];
+
+if ($rendFullMesPasado > 0) {
+    $stats['tend_rend_full'] = (($rendFullEsteMes - $rendFullMesPasado) / $rendFullMesPasado) * 100;
+}
+
+
+                // Gasto del mes
+                $gastoEsteMes = array_sum(array_column($logsEsteMes, 'precio_total'));
+                $gastoMesPasado = array_sum(array_column($logsMesPasado, 'precio_total'));
+                $stats['gasto_mes'] = $gastoEsteMes;
+
+                if ($gastoMesPasado > 0) {
+                    $stats['tendencia_gasto'] = (($gastoEsteMes - $gastoMesPasado) / $gastoMesPasado) * 100;
+                }
+
+                // Rendimiento del mes (ponderado)
+                $rendEsteMes = $this->calcularPromedioRendimiento($logsEsteMes);
+                $rendMesPasado = $this->calcularPromedioRendimiento($logsMesPasado);
+
+                // KPI del MES (estos son los que pintas en la tarjeta)
+                $stats['promedio_rend'] = $rendEsteMes;
+                $stats['rango_estimado'] = $stats['promedio_rend'] * (float)$vehiculoActual['capacidad_tanque'];
+
+                if ($rendMesPasado > 0) {
+                    $stats['tendencia_rend'] = (($rendEsteMes - $rendMesPasado) / $rendMesPasado) * 100;
+                }
+
+
+            // --- C. PROCESAMIENTO HISTÓRICO (logs filtrados para gráficas coherentes con la tabla) ---
+                $logsAsc = array_reverse($filteredLogs); // antiguo -> nuevo
+
+                $prevOdo = null;
+
+                // Para KPI ponderado por distancia
+                $totalDist = 0;
+                $totalGal = 0;
+
+                // Para gráfica de rendimiento (por evento)
+                $charts['fechas'] = [];
+                $charts['rendimiento'] = [];
+                $charts['mapa'] = [];
+
+                $gastosPorMesGrafica = [];
+
+                foreach ($logsAsc as $log) {
+
+                    // 1) Gráfica de gastos mensuales
+                    $mesAnio = date('M Y', strtotime($log['fecha']));
+                    if (!isset($gastosPorMesGrafica[$mesAnio])) $gastosPorMesGrafica[$mesAnio] = 0;
+                    $gastosPorMesGrafica[$mesAnio] += (float)$log['precio_total'];
+
+                    // 2) Rendimiento por intervalo (full-tank method)
+                    $currentRend = null;
+
+                    if ($prevOdo !== null && $log['odometro'] > $prevOdo && (float)$log['galones'] > 0) {
+                        $dist = (float)$log['odometro'] - (float)$prevOdo;
+                        $gal = (float)$log['galones'];
+
+                        $val = $dist / $gal; // km/gal
+
+                        // Filtro anti-outliers
+                        if ($val > 0.5 && $val < 200) {
+                            // KPI ponderado (sumatoria)
+                            $totalDist += $dist;
+                            $totalGal  += $gal;
+
+                            // Para chart (por evento)
+                            $currentRend = round($val, 1);
+                            $charts['fechas'][] = date('d/m', strtotime($log['fecha']));
+                            $charts['rendimiento'][] = $currentRend;
+                        }
+                    }
+
+                    // 3) Mapa (independiente del rendimiento)
+                    if (!empty($log['latitud']) && !empty($log['longitud'])) {
+                        $charts['mapa'][] = [
+                            'lat' => $log['latitud'],
+                            'lng' => $log['longitud'],
+                            'name' => $log['nombre_estacion']
+                        ];
+                    }
+
+                    // IMPORTANTE: actualizar SIEMPRE el odómetro anterior
+                    $prevOdo = (float)$log['odometro'];
+                }
+
+                // KPI final: promedio ponderado por distancia
+                //$stats['promedio_rend'] = ($totalGal > 0) ? ($totalDist / $totalGal) : 0;
+
+                // Rango estimado usando capacidad del tanque
+                //$stats['rango_estimado'] = $stats['promedio_rend'] * (float)$vehiculoActual['capacidad_tanque'];
+
+                // Gráfica de gastos
+                $charts['gasto_mensual'] = $gastosPorMesGrafica;
+
+                        }
 
         // 6. Renderizar Vista
         $this->view('dashboard/index', [
@@ -187,16 +265,39 @@ class DashboardController extends Controller
         ]);
     }
 
-    private function calcularPromedioRendimiento($logs) {
-        $total = 0; $count = 0;
-        foreach ($logs as $log) {
-            if (isset($log['rendimiento']) && $log['rendimiento'] > 0) {
-                $total += $log['rendimiento'];
-                $count++;
+    private function calcularPromedioRendimiento($logs)
+{
+    if (empty($logs)) return 0;
+
+    usort($logs, function($a, $b) {
+        return strtotime($a['fecha']) <=> strtotime($b['fecha']); // antiguo -> nuevo
+    });
+
+    $prevOdo = null;
+    $totalDist = 0;
+    $totalGal = 0;
+
+    foreach ($logs as $log) {
+        $odo = (float)($log['odometro'] ?? 0);
+        $gal = (float)($log['galones'] ?? 0);
+
+        if ($prevOdo !== null && $odo > $prevOdo && $gal > 0) {
+            $dist = $odo - $prevOdo;
+            $val = $dist / $gal;
+
+            if ($val > 0.5 && $val < 200) {
+                $totalDist += $dist;
+                $totalGal  += $gal;
             }
         }
-        return $count > 0 ? $total / $count : 0;
+
+        $prevOdo = $odo;
     }
+
+    return ($totalGal > 0) ? ($totalDist / $totalGal) : 0;
+}
+
+
 
     // --- ACCIONES CRUD (Se mantienen igual) ---
     public function saveVehicle() {
